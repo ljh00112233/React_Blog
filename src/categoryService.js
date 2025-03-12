@@ -16,8 +16,10 @@ export const addCategory = async (categoryName) => {
 // 모든 카테고리 가져오기
 export const getCategories = async () => {
   try {
-    const querySnapshot = await getDocs(categoriesCollection);
-    return querySnapshot.docs.map(doc => doc.data().name);
+    const querySnapshot = await getDocs(collection(db, "categories"));
+    const categories = querySnapshot.docs.map(doc => doc.data().name); // 🔥 카테고리 이름만 반환
+    console.log("불러온 카테고리 목록:", categories); // ✅ 콘솔에서 확인
+    return categories || []; // 🔥 undefined 방지
   } catch (error) {
     console.error("카테고리 가져오기 오류:", error);
     return [];

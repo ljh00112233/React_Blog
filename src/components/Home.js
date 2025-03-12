@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCategories, addCategory, deleteCategory } from "../categoryService";
 import { auth } from "../firebase";
-import { onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { Link } from "react-router-dom";
 import { logout } from "../auth";
 
@@ -12,16 +12,13 @@ export default function Home() {
   const [categories, setCategories] = useState([]);
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (currentUser?.email === ADMIN_EMAIL) {
-        setIsAdmin(true);
-      } else {
-        setIsAdmin(false);
-      }
+      setIsAdmin(currentUser?.email === ADMIN_EMAIL);
     });
     return () => unsubscribe();
   }, []);
@@ -33,12 +30,11 @@ export default function Home() {
     };
     fetchCategories();
   }, []);
-
+  
   const handleAddCategory = async () => {
     const newCategory = prompt("추가할 카테고리를 입력하세요:");
     if (!newCategory) return;
     
-    // 카테고리 중복 확인
     const existingCategories = await getCategories();
     if (existingCategories.includes(newCategory)) {
       alert("이미 존재하는 카테고리입니다.");
@@ -56,18 +52,11 @@ export default function Home() {
     }
   };
 
-  const handleVerifyPassword = async () => {
-    const password = prompt("비밀번호를 입력하세요:");
-    if (!password) return;
-
-    try {
-      const credential = EmailAuthProvider.credential(user.email, password);
-      await reauthenticateWithCredential(auth.currentUser, credential);
-      navigate("/user-info");
-    } catch (error) {
-      alert("비밀번호가 틀렸습니다.");
-    }
-  };
+  const filteredCategories = searchTerm.trim() === ""
+    ? categories // 🔥 검색어가 비어있으면 전체 카테고리 반환
+    : categories.filter(category =>
+      category.toLowerCase() === searchTerm.toLowerCase() // 완전 일치 검색
+    );
 
   return (
     <div>
@@ -75,19 +64,29 @@ export default function Home() {
       {user ? <p>현재 로그인한 사용자: {user.displayName} <button onClick={logout}>로그아웃</button></p> : <p>❌ 로그인되지 않음</p>}
       {user && (
         <div>
-          <button onClick={handleVerifyPassword}>사용자 정보</button>
+          <button onClick={() => navigate("/user-info")}>사용자 정보</button>
         </div>
       )}
       {user ? '' : <li><Link to="/auth">로그인</Link></li>}
-      <li><Link to="/create-post">게시글 작성</Link></li>
+      {user && <li><Link to="/create-post">게시글 작성</Link></li>} {/* 🔥 로그인한 사용자만 게시글 작성 가능 */}
+      
       <h2>카테고리</h2>
+      <input
+        type="text"
+        placeholder="카테고리 검색..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
       {isAdmin && (
         <div>
           <button onClick={handleAddCategory}>카테고리 추가</button>
         </div>
       )}
       <ul>
-        {categories.map((category) => (
+        <li>
+          <button onClick={() => navigate(`/view-posts`)}>📂 전체 카테고리 보기</button>
+        </li>
+        {filteredCategories.map((category) => (
           <li key={category}>
             <button onClick={() => navigate(`/view-posts?category=${category}`)}>{category}</button>
             {isAdmin && <button onClick={() => handleDeleteCategory(category)}>🗑️ 삭제</button>}

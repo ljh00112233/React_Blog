@@ -1,14 +1,10 @@
 import { db } from "./firebase";
 import { collection, addDoc, getDocs, query, where, deleteDoc, doc } from "firebase/firestore";
 
-export const addPost = async (title, content, category, fileUrl = "", fileName = "", createdAt) => {
+export const addPost = async (postData) => {
   return await addDoc(collection(db, "posts"), {
-    title,
-    content,
-    category,
-    fileUrl,
-    fileName,
-    createdAt, // 🔥 Firestore에서 시간 자동 추가
+    ...postData, // 🔥 전달된 모든 데이터 저장 (title, content, category, author 등 포함)
+    createdAt: postData.createdAt || new Date(), // 🔥 Firestore에서 시간 자동 추가
   });
 };
 
