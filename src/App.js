@@ -5,6 +5,7 @@ import Home from "./components/Home";
 import ViewPosts from "./components/ViewPosts";
 import SignupComponent from "./components/SignupComponent";
 import UserInfo from "./components/UserInfo";
+import EditPost from "./components/EditPost";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/view-posts" element={<ViewPosts />} />
         <Route path="/signup" element={<SignupComponent />} />
         <Route path="/user-info" element={<UserInfo />} />
+        <Route path="/edit-post/:postId" element={<EditPost />} />
       </Routes>
     </Router>
   );

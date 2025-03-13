@@ -2,6 +2,7 @@ import { auth } from "./firebase";
 import { getFirestore, collection, query, where, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from "firebase/auth";
 import { deleteUser } from "firebase/auth";
+import { isReferralCodeValid } from "./referralService"; // 추천인 코드 검증 함수 가져오기
 
 const db = getFirestore();
 const usersCollection = collection(db, "users");
@@ -13,14 +14,33 @@ const isNicknameTaken = async (nickname) => {
   return !querySnapshot.empty; // 닉네임이 존재하면 true 반환
 };
 
+// 🔥 이메일 중복 확인 함수
+const isEmailTaken = async (email) => {
+  const q = query(usersCollection, where("email", "==", email));
+  const querySnapshot = await getDocs(q);
+  return !querySnapshot.empty; // 이메일이 Firestore에 존재하면 true 반환
+};
+
 // 회원가입 (닉네임 포함, 닉네임 중복 검사)
-export const signUp = async (email, password, nickname) => {
+// 🔥 추천인 코드 검증을 추가한 회원가입 함수
+export const signUp = async (email, password, nickname, referralCode) => {
   try {
+    // 🔍 추천인 코드 검증
+    if (!referralCode || !(await isReferralCodeValid(referralCode))) {
+      throw new Error("유효한 추천인 코드를 입력해야 회원가입이 가능합니다.");
+    }
+
+    // 🔍 이메일 중복 체크
+    if (await isEmailTaken(email)) {
+      throw new Error("이미 사용 중인 이메일입니다.");
+    }
+    
+    // 🔍 닉네임 중복 체크
     if (password.length < 6) {
       throw new Error("비밀번호는 최소 6자 이상이어야 합니다.");
     }
-
-    // 닉네임 중복 검사
+    
+    // 🔐 비밀번호 유효성 검사
     if (await isNicknameTaken(nickname)) {
       throw new Error("이미 사용 중인 닉네임입니다.");
     }
@@ -34,7 +54,8 @@ export const signUp = async (email, password, nickname) => {
     await setDoc(userRef, {
       uid: userCredential.user.uid,
       email,
-      nickname
+      nickname,
+      referralCode, // 🔥 사용자가 입력한 추천인 코드 저장
     });
 
   } catch (error) {

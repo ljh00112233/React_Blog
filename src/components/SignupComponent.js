@@ -1,16 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signUp } from "../auth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function SignupComponent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
+  const [referralCode, setReferralCode] = useState(""); // 추천인 코드 저장
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams(); // URL에서 추천인 코드 가져오기
+
+  useEffect(() => {
+    const codeFromUrl = searchParams.get("referral");
+    if (codeFromUrl) {
+      setReferralCode(codeFromUrl);
+    }
+  }, [searchParams]);
 
   const handleSignUp = async () => {
     try {
-      await signUp(email, password, nickname);
+      await signUp(email, password, nickname, referralCode);
       alert("회원가입 성공! 로그인해주세요.");
       navigate("/");
     } catch (error) {

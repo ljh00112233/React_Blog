@@ -5,8 +5,7 @@ import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { Link } from "react-router-dom";
 import { logout } from "../auth";
-
-const ADMIN_EMAIL = "admin@admin.admin"; // 🔥 관리자 이메일 설정
+import { ADMIN_EMAIL } from "../config";
 
 export default function Home() {
   const [categories, setCategories] = useState([]);

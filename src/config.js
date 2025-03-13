@@ -1,0 +1,1 @@
+export const ADMIN_EMAIL = "admin@admin.admin"; // 🔥 관리자 이메일

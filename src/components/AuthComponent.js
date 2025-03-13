@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { login } from "../auth";
 import { useNavigate } from "react-router-dom";
+import { isReferralCodeValid } from "../referralService"; // 추천인 코드 검증 함수 가져오기
 
 const ADMIN_EMAIL = 'admin@admin.admin';
 const ADMIN_PASSWORD = 'admin1234';
@@ -25,6 +26,31 @@ export default function AuthComponent() {
       alert(`로그인 실패: 이메일 또는 비밀번호를 확인하세요.`);
     }
   };
+  
+  // 🔥 회원가입 버튼 클릭 시 추천인 코드 검증 후 이동
+  const handleSignUpClick = async () => {
+    const referralCode = prompt("추천인 코드를 입력하세요:");
+    if (!referralCode) {
+      alert("추천인 코드를 입력해야 합니다.");
+      return;
+    }
+
+    try {
+      // Firestore에서 추천인 코드 검증
+      const isValid = await isReferralCodeValid(referralCode);
+      if (!isValid) {
+        alert("유효하지 않은 추천인 코드입니다. 다시 입력해주세요.");
+        return; // 🚫 회원가입 페이지로 이동하지 않음
+      }
+
+      // ✅ 유효한 추천인 코드일 경우에만 이동
+      navigate(`/signup?referral=${referralCode}`);
+
+    } catch (error) {
+      console.error("추천인 코드 확인 중 오류 발생:", error);
+      alert("추천인 코드 확인 중 오류가 발생했습니다. 다시 시도해주세요.");
+    }
+  };
 
   return (
     <div>
@@ -40,7 +66,7 @@ export default function AuthComponent() {
         onChange={(e) => setPassword(e.target.value)}
       />
       <button onClick={handleLogin}>로그인</button>
-      <button onClick={() => navigate("/signup")}>회원가입</button>
+      <button onClick={handleSignUpClick}>회원가입</button>
       <button onClick={() => navigate("/")}>🏠 홈으로</button>
     </div>
   );
