@@ -6,6 +6,7 @@ import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { serverTimestamp } from "firebase/firestore";
 import { getCategories } from "../categoryService";
+import { TextField, Button, Container, Typography, Select, MenuItem, FormControl, InputLabel, Box, Input } from "@mui/material";
 
 export default function CreatePost() {
   const [title, setTitle] = useState("");
@@ -72,22 +73,35 @@ export default function CreatePost() {
   };
 
   return (
-    <div>
-      <h2>게시글 작성</h2>
-      {user && <p>작성자: {user.displayName || "익명"}</p>} {/* 🔥 작성자 닉네임 표시 */}
-      <input type="text" placeholder="제목" value={title} onChange={(e) => setTitle(e.target.value)} />
-      <textarea placeholder="내용" value={content} onChange={(e) => setContent(e.target.value)} />
-      <label>
-        카테고리 : 
-        <select value={category} onChange={(e) => setCategory(e.target.value)}> {/* 🔥 드롭다운으로 변경 */}
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
-      </label>
-      <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-      <button onClick={handleSubmit}>게시글 작성</button>
-      <button onClick={() => navigate("/")}>🏠 홈으로</button>
-    </div>
+    <>
+      <Container maxWidth="sm">
+        <Typography variant="h4" gutterBottom>게시글 작성</Typography>
+        <FormControl fullWidth>
+          <InputLabel>카테고리 선택</InputLabel>
+          <Select value={category} onChange={(e) => setCategory(e.target.value)}>
+            {categories.map((cat) => (
+              <MenuItem key={cat} value={cat}>
+                {cat}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <TextField label="제목" variant="outlined" fullWidth margin="normal" onChange={(e) => setTitle(e.target.value)} />
+        <TextField label="내용" variant="outlined" multiline rows={4} fullWidth margin="normal" onChange={(e) => setContent(e.target.value)} />
+        <Box display="flex" alignItems="center" marginTop={2} gap={2}>
+          <Input
+            type="file"
+            onChange={(e) => setFile(e.target.files[0])}
+          />
+          {file && <Typography variant="body2">선택된 파일: {file.name}</Typography>}
+        </Box>
+        <Button variant="contained" color="primary" fullWidth onClick={handleSubmit}>
+          게시글 작성
+        </Button>
+        <Button variant="contained" color="primary" fullWidth onClick={() => navigate("/")}>
+          🏠 홈으로
+        </Button>
+      </Container>
+    </>
   );
 }

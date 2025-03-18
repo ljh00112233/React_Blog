@@ -2,6 +2,7 @@ import { useState } from "react";
 import { login } from "../auth";
 import { useNavigate } from "react-router-dom";
 import { isReferralCodeValid } from "../referralService"; // 추천인 코드 검증 함수 가져오기
+import { TextField, Button, Container, Typography } from "@mui/material";
 
 const ADMIN_EMAIL = 'admin@admin.admin';
 const ADMIN_PASSWORD = 'admin1234';
@@ -53,21 +54,34 @@ export default function AuthComponent() {
   };
 
   return (
-    <div>
-      <h2>로그인</h2>
-      <input
-        type="email"
-        placeholder="이메일"
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <input
-        type="password"
-        placeholder="비밀번호"
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <button onClick={handleLogin}>로그인</button>
-      <button onClick={handleSignUpClick}>회원가입</button>
-      <button onClick={() => navigate("/")}>🏠 홈으로</button>
-    </div>
+    <>
+      <Container maxWidth="xs" style={{ marginTop: "50px", textAlign: "center" }}>
+        <Typography variant="h4" gutterBottom>로그인</Typography>
+        <TextField 
+          label="이메일" 
+          variant="outlined" 
+          fullWidth 
+          margin="normal" 
+          onChange={(e) => setEmail(e.target.value)} 
+        />
+        <TextField 
+          label="비밀번호" 
+          type="password" 
+          variant="outlined" 
+          fullWidth 
+          margin="normal" 
+          onChange={(e) => setPassword(e.target.value)} 
+        />
+        <Button variant="contained" color="primary" fullWidth onClick={handleLogin}>
+          로그인
+        </Button>
+        <Button variant="contained" color="primary" fullWidth onClick={handleSignUpClick}>
+          회원가입
+        </Button>
+        <Button variant="contained" color="primary" fullWidth onClick={() => navigate("/")}>
+          🏠 홈으로
+        </Button>
+      </Container>
+    </>
   );
 }

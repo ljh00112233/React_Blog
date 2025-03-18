@@ -1,16 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { getPostsByCategory, deletePost, updatePost, canEditPost } from "../postService";
-import { auth } from "../firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { ADMIN_EMAIL } from "../config";
+import { getLatestPosts } from "../postService";
+import { List, ListItem, Typography, Container, Box, FormControl, InputLabel, Select, MenuItem, TextField, Button, CardContent, Card } from "@mui/material";
+
 
 export default function ViewPosts() {
-  const [posts, setPosts] = useState([]);
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchType, setSearchType] = useState("title"); // 🔥 검색 기준 추가
+  const [latestPosts, setLatestPosts] = useState([]); // 🔥 전체 최신 게시글
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -19,134 +16,81 @@ export default function ViewPosts() {
   const category = queryParams.get("category") || "";
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
+    const fetchPosts = async () => {
+      const posts = await getLatestPosts();
+      setLatestPosts(posts);
+    };
+
+    fetchPosts();
   }, []);
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      setLoading(true);
-      const postsData = await getPostsByCategory(category);
-      // 최신 글이 위로 오도록 정렬 (작성 시간이 최신일수록 먼저)
-      const sortedPosts = postsData.sort((a, b) => b.createdAt - a.createdAt);
-      setPosts(sortedPosts);
-      setLoading(false);
-    };
-    fetchPosts();
-  }, [category]);
-
-  // 🔥 선택된 검색 기준에 따라 완전 일치 검색 적용, 검색어가 비어있으면 전체 게시글 표시
-  const filteredPosts = searchTerm.trim() === "" ? posts : posts.filter((post) => {
-    if (searchType === "title") {
-      return post.title.toLowerCase() === searchTerm.toLowerCase();
-    } else if (searchType === "content") {
-      return post.content.toLowerCase() === searchTerm.toLowerCase();
-    } else if (searchType === "author") {
-      return (post.author?.nickname || "익명").toLowerCase() === searchTerm.toLowerCase();
-    }
-    return true;
+  const filteredPosts = latestPosts.filter(post => {
+    if (!searchTerm) return true; // 검색어가 없으면 모든 게시글 표시
+    const value = post[searchType]?.toLowerCase() || ""; // 검색 기준(title, content, author)에 따라 값 선택
+    return value.includes(searchTerm.toLowerCase()); // 검색어 포함 여부 확인
   });
 
-  // 🔥 게시글 수정 핸들러 (본인만 가능)
-  const handleEdit = async (postId, title, content, postAuthorUid) => {
-    if (!user) {
-      alert("로그인해야 게시글을 수정할 수 있습니다.");
-      return;
-    }
-  
-    if (postAuthorUid !== user.uid) {
-      alert("본인만 게시글을 수정할 수 있습니다.");
-      return;
-    }
-  
-    // 🔥 새 탭에서 수정 페이지 열기 (수정할 제목과 내용을 쿼리 파라미터로 전달)
-    navigate(`/edit-post/${postId}?title=${encodeURIComponent(title)}&content=${encodeURIComponent(content)}`);
-  };
-
-  const handleDelete = async (postId, postAuthorUid) => {
-    if (!user) {
-      alert("로그인해야 게시글을 삭제할 수 있습니다.");
-      return;
-    }
-  
-    // 🔥 본인이 작성한 글인지 확인 (관리자는 예외 없이 삭제 불가능)
-    const isAdmin = user.email === ADMIN_EMAIL; // 🔥 관리자 여부 확인
-    const isOwner = postAuthorUid === user.uid; // 🔥 본인 여부 확인
-
-    if (!isOwner && !isAdmin) {
-      alert("본인 또는 관리자만 게시글을 삭제할 수 있습니다.");
-      return;
-    }
-  
-    if (window.confirm("정말 삭제하시겠습니까?")) {
-      await deletePost(postId);
-      alert("게시글이 삭제되었습니다.");
-      setPosts(posts.filter(post => post.id !== postId));
-    }
-  };
-
-  const handleDownload = (fileUrl, fileName) => {
-    const link = document.createElement("a");
-    link.href = fileUrl;
-    link.download = fileName || "downloaded_file";
-    link.target = "_blank";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
-    <div>
-      <h2>게시글 목록 ({category || "전체"})</h2>
+    <>
+      <Container maxWidth="md">
+        {/* 🔥 게시글 목록 제목 */}
+        <Typography variant="h4" gutterBottom>
+          게시글 목록 ({category || "전체"})
+        </Typography>
 
-      <div>
-        <select value={searchType} onChange={(e) => setSearchType(e.target.value)}> {/* 🔥 검색 기준 선택 */}
-          <option value="title">제목</option>
-          <option value="content">내용</option>
-          <option value="author">작성자</option>
-        </select>
-        <input
-          type="text"
-          placeholder="검색어 입력"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
+        {/* 🔥 검색 UI */}
+        <Box display="flex" gap={2} alignItems="center" marginBottom={2}>
+          {/* 🔹 검색 기준 선택 드롭다운 */}
+          <FormControl variant="outlined" size="small" style={{ minWidth: 120 }}>
+            <InputLabel>검색 기준</InputLabel>
+            <Select value={searchType} onChange={(e) => setSearchType(e.target.value)} label="검색 기준">
+              <MenuItem value="title">제목</MenuItem>
+              <MenuItem value="content">내용</MenuItem>
+              <MenuItem value="author">작성자</MenuItem>
+            </Select>
+          </FormControl>
 
-      <button onClick={() => navigate("/")}>🏠 홈으로</button>
-      {loading ? (
-        <p>⏳ 게시글 불러오는 중...</p>
-      ) : filteredPosts.length === 0 ? (
-        <p>❌ 검색 결과가 없습니다.</p>
-      ) : (
-      <ul>
+          {/* 🔹 검색 입력 필드 */}
+          <TextField
+            variant="outlined"
+            size="small"
+            placeholder="검색어 입력"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            fullWidth
+          />
+        </Box>
+
+        {/* 🔥 게시글 목록 */}
+        {filteredPosts.length > 0 ? (
+        <List>
           {filteredPosts.map((post) => (
-            <li key={post.id}>
-              <h3>{post.title}</h3>
-              <p>{post.content}</p>
-              <small>카테고리: {post.category}</small>
-              <small>작성자: {post.author?.nickname || "익명"}</small>
-              <br />
-              <small>작성 시간: {new Date(post.createdAt).toLocaleString()}</small>
-              {user && post.author.uid === user.uid && (
-                <button onClick={() => handleEdit(post.id, post.title, post.content, post.author.uid)}>수정</button>
-              )}
-              {post.fileUrl && (
-                <div>
-                  <button onClick={() => handleDownload(post.fileUrl, post.fileName)}>
-                    📥 {post.fileName || "파일 다운로드"}
-                  </button>
-                </div>
-              )}
-              {user && (post.author.uid === user.uid || user.email === ADMIN_EMAIL) && (
-                <button onClick={() => handleDelete(post.id, post.author.uid)}>삭제</button>
-              )}
-            </li>
+            <ListItem key={post.id} button onClick={() => navigate(`/post/${post.id}`)}>
+              <Card style={{ width: "100%" }}>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    {/* 🔹 제목 */}
+                    <Typography variant="h6">{post.title}</Typography>
+                    {/* 🔹 작성자 (오른쪽 정렬) */}
+                    <Typography variant="body2" color="textSecondary">
+                      {post.author.nickname}
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            </ListItem>
           ))}
-        </ul>
-      )}
-    </div>
+        </List>
+        ) : (
+            <Typography variant="body2">게시글이 없습니다.</Typography>
+        )}
+
+
+        {/* 🔥 홈으로 가기 버튼 */}
+        <Button variant="contained" color="primary" fullWidth onClick={() => navigate("/")}>
+          🏠 홈으로
+        </Button>
+      </Container>
+    </>
   );
 }

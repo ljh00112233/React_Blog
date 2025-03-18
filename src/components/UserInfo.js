@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
 import { updateProfile, deleteUser } from "firebase/auth";
 import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { Typography, TextField, Button, Container, Box } from "@mui/material";
+
 
 export default function UserInfo() {
   const [nickname, setNickname] = useState("");
@@ -43,23 +45,44 @@ export default function UserInfo() {
   };
 
   return (
-    <div>
-      <h2>사용자 정보</h2>
-      {user ? (
-        <>
-          <p>이메일: {user.email}</p>
-          <input
-            type="text"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
-          />
-          <button onClick={handleUpdateNickname}>닉네임 수정</button>
-          <button onClick={() => navigate("/")}>홈으로 돌아가기</button>
-          <button onClick={handleDeleteAccount} style={{ color: "red" }}>회원 탈퇴</button>
-        </>
-      ) : (
-        <p>로그인된 사용자가 없습니다.</p>
-      )}
-    </div>
+    <>
+      <Container maxWidth="sm">
+        <Typography variant="h4" gutterBottom>사용자 정보</Typography>
+
+        {user ? (
+          <>
+            {/* 🔥 이메일 정보 */}
+            <Typography variant="body1" gutterBottom>
+              <strong>이메일:</strong> {user.email}
+            </Typography>
+
+            {/* 🔥 닉네임 입력 필드 */}
+            <TextField
+              label="닉네임"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+            />
+
+            {/* 🔥 버튼 그룹 */}
+            <Box display="flex" flexDirection="column" gap={2} marginTop={2}>
+              <Button variant="contained" color="primary" fullWidth onClick={handleUpdateNickname}>
+                닉네임 수정
+              </Button>
+              <Button variant="outlined" color="secondary" fullWidth onClick={() => navigate("/")}>
+                홈으로 돌아가기
+              </Button>
+              <Button variant="contained" color="error" fullWidth onClick={handleDeleteAccount}>
+                회원 탈퇴
+              </Button>
+            </Box>
+          </>
+        ) : (
+          <Typography variant="body1" color="textSecondary">로그인된 사용자가 없습니다.</Typography>
+        )}
+      </Container>
+    </>
   );
 }

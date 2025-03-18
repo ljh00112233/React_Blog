@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getPostById, updatePost } from "../postService";
 import { auth } from "../firebase";
+import { Typography, TextField, Button, Container, Box } from "@mui/material";
 
 export default function EditPost() {
   const { postId } = useParams(); // 🔥 URL에서 postId 가져오기
@@ -40,22 +41,52 @@ export default function EditPost() {
 
     await updatePost(postId, title, content);
     alert("게시글이 수정되었습니다.");
-    navigate(`/view-posts`); // 수정 후 게시글 목록으로 이동
+    navigate(-1);
   };
 
   return (
-    <div>
-      <h2>게시글 수정</h2>
-      {post ? (
-        <>
-          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <textarea value={content} onChange={(e) => setContent(e.target.value)} />
-          <button onClick={handleUpdate}>수정 완료</button>
-          <button onClick={() => navigate(-1)}>취소</button>
-        </>
-      ) : (
-        <p>게시글을 불러오는 중...</p>
-      )}
-    </div>
+    <>
+      <Container maxWidth="sm">
+        <Typography variant="h4" gutterBottom>게시글 수정</Typography>
+
+        {post ? (
+          <>
+            {/* 🔥 제목 입력 */}
+            <TextField
+              label="제목"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+
+            {/* 🔥 내용 입력 */}
+            <TextField
+              label="내용"
+              variant="outlined"
+              fullWidth
+              multiline
+              rows={5}
+              margin="normal"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            />
+
+            {/* 🔥 수정 완료 & 취소 버튼 */}
+            <Box display="flex" gap={2} marginTop={2}>
+              <Button variant="contained" color="primary" fullWidth onClick={handleUpdate}>
+                수정 완료
+              </Button>
+              <Button variant="outlined" color="secondary" fullWidth onClick={() => navigate(-1)}>
+                취소
+              </Button>
+            </Box>
+          </>
+        ) : (
+          <Typography variant="body1" color="textSecondary">게시글을 불러오는 중...</Typography>
+        )}
+      </Container>
+    </>
   );
 }
